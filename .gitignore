@@ -1,0 +1,12 @@
+
+.DS_Store
+.gitignore
+.idea/
+dist/
+example.png
+images/
+node_modules/
+pdf/
+trace.json
+tsconfig.json
+yarn.lock
