@@ -1,13 +1,15 @@
 import puppeteer from 'puppeteer'
 import { CrawlStorySchema, StorySchema } from '../../data/models/story'
 import _ from 'lodash'
+import { readData } from './crawlFromJsonFiles'
+import { categories } from './files'
 
-const categories = [
-	'Tiên Hiệp', 'Kiếm Hiệp', 'Ngôn Tình', 'Đô Thị', 'Quan Trường', 'Võng Du', 'Khoa Huyễn', 'Huyền Huyễn', 'Dị Giới', 'Dị Năng',
-	'Quân Sự', 'Lịch Sử', 'Xuyên Không', 'Trọng Sinh', 'Trinh Thám', 'Thám Hiểm', 'Linh Dị', 'Sắc', 'Ngược', 'Sủng',
-	'Cung Đấu', 'Nữ Cường', 'Gia Đấu', 'Đông Phương', 'Đam Mỹ', 'Bách Hợp', 'Hài Hước', 'Điền Văn', 'Cổ Đại', 'Mạt Thế',
-	'Truyện Teen', 'Phương Tây', 'Nữ Phụ', 'Light Novel', 'Việt Nam', 'Đoản Văn', 'Khác'
-]
+// const categories = [
+// 	'Tiên Hiệp', 'Kiếm Hiệp', 'Ngôn Tình', 'Đô Thị', 'Quan Trường', 'Võng Du', 'Khoa Huyễn', 'Huyền Huyễn', 'Dị Giới', 'Dị Năng',
+// 	'Quân Sự', 'Lịch Sử', 'Xuyên Không', 'Trọng Sinh', 'Trinh Thám', 'Thám Hiểm', 'Linh Dị', 'Sắc', 'Ngược', 'Sủng',
+// 	'Cung Đấu', 'Nữ Cường', 'Gia Đấu', 'Đông Phương', 'Đam Mỹ', 'Bách Hợp', 'Hài Hước', 'Điền Văn', 'Cổ Đại', 'Mạt Thế',
+// 	'Truyện Teen', 'Phương Tây', 'Nữ Phụ', 'Light Novel', 'Việt Nam', 'Đoản Văn', 'Khác'
+// ]
 
 export function fetchStoriesWithCat(category, limit) {
 	return new Promise((resolve, reject) => {
@@ -39,7 +41,7 @@ function handleFirstimeCrawl(record: any) {
 			const totalChapters = parseInt(record.chapters.replace('Chương', '').trim()) || 0
 			const browser = await puppeteer.launch({headless: true})
 			const page = await browser.newPage()
-			await page.goto(record.linkToCrawl)
+			await page.goto(record.linkToCrawl, {timeout: 600000})
 			await page.waitFor(5000)
 			const storySelector = '#truyen > div.col-xs-12.col-sm-12.col-md-9.col-truyen-main > div.col-xs-12.col-info-desc > div.col-xs-12.col-sm-4.col-md-4.info-holder'
 			const detailStory = await page.$$eval(storySelector, storyDetail => {
@@ -50,7 +52,7 @@ function handleFirstimeCrawl(record: any) {
 					return {category, status}
 				})
 			})
-			// console.log('....', detailStory[0])
+			console.log('....', detailStory[0])
 			const story = new StorySchema({
 				thumbnail: record.thumbnail,
 				linkToCrawl: record.linkToCrawl,
@@ -81,7 +83,13 @@ function crawlStory(storyRecord: any) {
 	return new Promise(async (resolve, reject) => {
 		try {
 			const totalChapters = storyRecord.chapters
-			for (let i = 0; i < totalChapters; i ++) {
+			const info: any = await StorySchema.find(storyRecord)
+			// console.log('info...', info[])
+			// const lastChapter = info[0].content.length
+			// const max = info[0].content.reduce(chap => chap.chapter, 0)
+			const lastChapter = info[0].content.length > 0 ? info[0].content[info[0].content.length - 1].chapter : 0
+			console.log('last chapter...', lastChapter)
+			for (let i = lastChapter; i < totalChapters; i ++) {
 				const browser = await puppeteer.launch({headless: true})
 				const page = await browser.newPage()
 				await page.goto(`${storyRecord.linkToCrawl}chuong-${i + 1}`, { timeout: 600000})
@@ -90,33 +98,54 @@ function crawlStory(storyRecord: any) {
 				const content = await page.$$eval(contentSelector, divContent => {
 					return divContent.map(div => {
 						let temp = []
+						let temp2 = []
 						div.childNodes.forEach(item => {
 							if(item.nodeName === '#text' || item.nodeName === 'BR')	{
 								temp.push(item)
 							}
-						})
-						const contentDiv = temp.map(it => {
-							if(it.nodeName === '#text') {
-								return it.data
-							}
-							else{
-								return '<' + it.localName + '>'
+							if (item.nodeName === 'P') {
+								temp2.push(item)
 							}
 						})
+						const contentDiv = temp.length > 10
+							?
+							temp.map(it => {
+								if(it.nodeName === '#text') {
+									return it.data
+								}
+								else{
+									return '<' + it.localName + '>'
+								}
+							})
 							.join(' ')
-
+							:
+							temp2.length > 10 ?
+								temp2.map(ite => {
+									// return it2.data
+									return '<' + ite.localName + '>' + ite.textContent + '<' + ite.localName + '/>'
+								})
+								:
+								''
 						return contentDiv
 					})
 				})
+
+				const chapterTitle = '#wrap > div.container.chapter > div > div > h2 > a'
+				const title = await page.$$eval(chapterTitle, aTitle => {
+					return aTitle.map(a => {
+						return a.textContent
+					})
+				})
+				console.log('chapter title...', title)
 				const doc: any = await StorySchema.findById(storyRecord.id)
 				// console.log('doc...............', doc)
 				if (doc.content.length === 0){
-					doc.content = [{chapter: 1, text: content}]
+					doc.content = [{chapter: 1, text: content, title}]
 					doc.save().then(r => console.log('updated story...'))
 				} else {
 					const newContent = doc.content.map(chap => chap.chapter).includes(i + 1)
 						?   doc.content
-						: [...doc.content, {chapter: i + 1, text: content}]
+						: [...doc.content, {chapter: i + 1, text: content, title}]
 					doc.content = newContent
 					doc.save().then(r => console.log('updated story...'))
 				}
@@ -223,8 +252,7 @@ function crawlStoryWithRawData(rawStory: any) {
 }
 
 export async function crawl() {
-	const crawledStories = []
-	const input: any = await fetchStoriesWithCat(categories[1], 0)
+	const input: any = await readData(categories[0])
 	console.log('total story...', input.length)
 	// const input = await fetchStory('Sợi Khói Mỏng Lạc Giữa Trần Ai', 'Diệp Lạc Vô Tâm')
 	// const input2: any = await fetchStory('Có Hai Con Mèo Ngồi Bên Cửa Sổ', 'Nguyễn Nhật Ánh')
@@ -232,26 +260,7 @@ export async function crawl() {
 	// const test = input2.concat(input)
 	const test: any = input
 	// console.log('test array...', test)
-	for (let i = 4; i < test.length; i ++ ){
+	for (let i = 0; i < test.length; i ++ ){
 		await crawlStoryWithRawData(test[i])
 	}
-
-
-	// const res1 = await crawlStory(input[0])
-	// console.log('res1', res1)
-	//
-	// const res2 = await crawlStory(input2[0])
-	// console.log('res2', res2)
-	// const dones = await crawlStories(input)
-	// console.log('done....', dones)
-	// const storyStatus: any = await fetchStory(input[1].name.trim(), input[1].author.trim())
-	// if (storyStatus.length === 0) {
-	// 	const storySaved = await handleFirstimeCrawl(input[1])
-	// 	console.log('saved...', storySaved)
-	// 	crawlStory(storySaved)
-	// }
-	// else {
-	// 	console.log('story is saved before...')
-	// 	crawlStory(storyStatus[0])
-	// }
 }

@@ -20,5 +20,5 @@ export const StorySchema = mongoose.model('Story', new Schema({
 	chapters: Number,
 	category: [String],
 	status: String,
-	content: [{chapter: Number, text: String}]
+	content: [{chapter: Number, text: String, title: String}]
 }))

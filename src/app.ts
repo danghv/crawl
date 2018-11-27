@@ -13,10 +13,15 @@ const app = express()
 // 	console.log('connected to database')
 // })
 
-mongoose.connect(`mongodb://dangha:Dang2402@ds163226.mlab.com:63226/story-category`)
+mongoose.connect(`mongodb://DangHV:Dang2402@ds161856.mlab.com:61856/stories-demo`)
 mongoose.connection.once('open', () => {
 	console.log('connected to database')
 })
+
+// mongoose.connect(`mongodb://dangha:Dang2402@ds163226.mlab.com:63226/story-category`)
+// mongoose.connection.once('open', () => {
+// 	console.log('connected to database')
+// })
 mongoose.set('useFindAndModify', false)
 
 app.get('/test', async (req, res) => {
