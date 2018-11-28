@@ -1,96 +1,85 @@
 import { GraphQLID, GraphQLObjectType, GraphQLSchema, GraphQLString, GraphQLList, GraphQLNonNull, GraphQLInt } from 'graphql'
 import _ from 'lodash'
-import { PersonTypes, StoryTypes, ContentStory } from './types'
-import { PersonSchema } from '../models/person'
-import { StorySchema } from '../models/story'
-
-const fakeDatas = [
-	{
-		id: 'a',
-		name: 'alice',
-		mobilePhone: 'xxx',
-		email: '',
-		cmnd: ''
-	},
-	{
-		id: 'b',
-		name: 'bob',
-		mobilePhone: 'yyy',
-		email: '',
-		cmnd: ''
-	}
-]
+import { PersonTypes, StoryTypes, Content } from './types'
+import { StorySchemaFull, ContentSchema } from '../models/story-full'
 
 const RootQuery = new GraphQLObjectType({
 	name: 'RootQuery',
 	fields: {
-		person: {
-			type: PersonTypes,
-			args: { id: { type: GraphQLID }},
-			resolve(parent, args){
-				return fakeDatas.filter(data => data.id === args.id)[0]
-			}
-		},
-		persons: {
-			type: new GraphQLList(PersonTypes),
-			resolve(parent, args){
-				return PersonSchema.find({})
-			}
-		},
 		story: {
 			type: StoryTypes,
 			args: { name: { type: GraphQLString }, author: { type: GraphQLString }, id: { type: GraphQLID } },
 			resolve(parent, args) {
 				let story
 				if (args.name && args.author) {
-					story = StorySchema.findOne({name: args.name, author: args.author})
+					story = StorySchemaFull.findOne({name: args.name, author: args.author})
 				}
 				if (args.id) {
-					story = StorySchema.findById(args.id)
+					story = StorySchemaFull.findById(args.id)
 				}
 				return story
 			}
 		},
 		stories: {
 			type: GraphQLList(StoryTypes),
-			args: { limit: {type: GraphQLInt }, category: { type: GraphQLString } },
+			args: { limit: {type: GraphQLInt }, category: { type: GraphQLString }, status: { type: GraphQLString } },
 			resolve(parent, args){
-				const stories = StorySchema.find({}).limit(args.limit)
+				let stories
+				if (args.status) {
+					stories = StorySchemaFull.find({status: args.status}).limit(args.limit)
+				}
+				else if(args.category) {
+
+				}
+				else {
+					stories = StorySchemaFull.find({}).limit(args.limit)
+				}
 				return stories
 			}
 		},
 		chapter: {
-			type: ContentStory,
-			args: { storyId: { type: GraphQLID }, storyName: { type: GraphQLString }, storyAuthor: { type: GraphQLString }, chapter: { type: GraphQLInt } },
+			type: Content,
+			args: { storyId: { type: GraphQLID }, chapter: { type: GraphQLInt }, storyName: { type: GraphQLString }, storyAuthor: { type: GraphQLString } },
 			async resolve(parent, args) {
 				let chapter
 				if (args.storyId && args.chapter) {
-					const story: any = await StorySchema.findById(args.storyId)
-					chapter = story.content.filter(item => item.chapter === args.chapter)[0]
+					const story: any = await StorySchemaFull.findById(args.storyId)
+					const contentStory: any = await ContentSchema.findById(story.contentId)
+					chapter = contentStory.content.filter(item => item.chapter === args.chapter)[0]
 				}
 				if (args.storyName && args.storyAuthor && args.chapter) {
-					const story: any = await StorySchema.find({name: args.storyName, author: args.storyAuthor})
-					chapter = story[0].content.filter(item => item.chapter === args.chapter)[0]
+					const story: any = await StorySchemaFull.findOne({name: args.storyName, author: args.storyAuthor})
+					const contentStory: any = await ContentSchema.findById(story.contentId)
+					chapter = contentStory.content.filter(item => item.chapter === args.chapter)[0]
 				}
 				return chapter
 			}
 		},
 		chapters: {
-			type: GraphQLList(ContentStory),
-			args: { storyId: { type: GraphQLID }, storyName: { type: GraphQLString }, storyAuthor: { type: GraphQLString } },
+			type: GraphQLList(Content),
+			args: { storyId: { type: GraphQLID }, storyName: { type: GraphQLString }, storyAuthor: { type: GraphQLString }, id: { type: GraphQLID } },
 			async resolve(parent, args) {
 				let chapters
+				if (args.id) {
+					const contentStory: any = await ContentSchema.findById(args.id)
+					chapters = contentStory.content
+				}
 				if (args.storyId) {
-					const story: any = await StorySchema.findById(args.storyId)
-					chapters = story.content
+					const story: any = await StorySchemaFull.findById(args.storyId)
+					const contentStory: any = await ContentSchema.findById(story.contentId)
+					chapters = contentStory.content
 				}
 				if (args.storyName && args.storyAuthor) {
-					const story: any = await StorySchema.find({name: args.storyName, author: args.storyAuthor})
-					chapters = story[0].content
+					const story: any = await StorySchemaFull.findOne({name: args.storyName, author: args.storyAuthor})
+					const contentStory: any = await ContentSchema.findById(story.contentId)
+					chapters = contentStory.content
 				}
 				return chapters
 			}
-		}
+		},
+		// content: {
+		// 	type: Gra
+		// }
 	}
 })
 
@@ -105,12 +94,13 @@ const Mutation = new GraphQLObjectType({
 				phoneNumber: { type: new GraphQLNonNull(GraphQLInt)}
 			},
 			resolve(parent, args){
-				let person = new PersonSchema({
-					name: args.name,
-					email: args.email,
-					phoneNumber: args.phoneNumber
-				})
-				return person.save()
+				// let person = new PersonSchema({
+				// 	name: args.name,
+				// 	email: args.email,
+				// 	phoneNumber: args.phoneNumber
+				// })
+				// return person.save()
+				return
 			}
 		}
 	}

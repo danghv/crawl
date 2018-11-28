@@ -7,7 +7,7 @@ export function readData(cat) {
 				if (err) {
 					console.log('e', err)
 				}
-				console.log('data...', JSON.parse(data)[0])
+				// console.log('data...', JSON.parse(data)[0])
 				resolve(JSON.parse(data))
 			})
 		}

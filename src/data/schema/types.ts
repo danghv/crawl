@@ -26,12 +26,19 @@ export const PersonTypes = new GraphQLObjectType({
 	})
 })
 
+export const Content = new GraphQLObjectType({
+	name: 'Content',
+	fields: () => ({
+		chapter: { type: GraphQLInt },
+		title: { type: GraphQLString },
+		text: { type: GraphQLString }
+	})
+})
+
 export const ContentStory = new GraphQLObjectType({
 	name: 'ContentStory',
 	fields: () => ({
-		chapter: { type: GraphQLInt },
-		text: { type: GraphQLString },
-		title: { type: GraphQLString }
+		content: { type: new GraphQLList(Content)}
 	})
 })
 
@@ -45,14 +52,8 @@ export const StoryTypes = new GraphQLObjectType({
 		label: { type: GraphQLString },
 		author: { type: GraphQLString },
 		chapters: { type: GraphQLInt },
-		category: { type: GraphQLList(GraphQLString) },
+		category: { type: new GraphQLList(GraphQLString) },
 		status: { type: GraphQLString },
-		content: {
-			type: GraphQLList(ContentStory),
-			resolve(parent, args) {
-				// console.log('parent, args', parent, args)
-				return parent.content
-			}
-		}
+		contentId: { type: GraphQLString }
 	})
 })
