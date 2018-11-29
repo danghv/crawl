@@ -168,7 +168,7 @@ function crawlStoryWithRawData(rawStory: any) {
 }
 
 export async function crawl() {
-	const input: any = await readData(categories[0])
+	const input: any = await readData(categories[2])
 	const test: any = input
 	for (let i = 0; i < test.length; i ++ ){
 		await crawlStoryWithRawData(test[i])

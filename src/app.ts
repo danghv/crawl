@@ -18,7 +18,12 @@ const app = express()
 // 	console.log('connected to database')
 // })
 
-mongoose.connect(`mongodb://danghv:Dang2402@ds117834.mlab.com:17834/full-story`)
+// mongoose.connect(`mongodb://danghv:Dang2402@ds117834.mlab.com:17834/full-story`)
+// mongoose.connection.once('open', () => {
+// 	console.log('connected to database')
+// })
+
+mongoose.connect(`mongodb://danghv:Dang2402@ds063150.mlab.com:63150/story-reference-content`)
 mongoose.connection.once('open', () => {
 	console.log('connected to database')
 })

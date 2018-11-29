@@ -355,3 +355,19 @@ async function getMaxPageOfCategory() {
 		// return maxPage
 	}
 }
+
+const filterLostNumbers = (arr) => {
+	let temp = 0
+	return arr.reduce((memo, number) => {
+		const distance = number - temp
+		if(distance === 1) {
+			temp = number
+		} else {
+			for(let i = 1;i < distance; i++){
+				memo.push(temp + i)
+			}
+			temp = number
+		}
+		return memo
+	}, [])
+}
