@@ -3,6 +3,7 @@ import { StorySchemaFull, ContentSchema} from '../../data/models/story-full'
 import _ from 'lodash'
 import { readData } from './crawlFromJsonFiles'
 import { categories } from './files'
+import { fetchContentStory } from './testStoryContent'
 
 export function fetchStory(name, author){
 	return new Promise((resolve, reject) => {
@@ -167,10 +168,22 @@ function crawlStoryWithRawData(rawStory: any) {
 	})
 }
 
+// export async function crawl() {
+// 	const input: any = await readData(categories[2])
+// 	const test: any = input
+// 	for (let i = 0; i < test.length; i ++ ){
+// 		await crawlStoryWithRawData(test[i])
+// 	}
+// }
+
 export async function crawl() {
-	const input: any = await readData(categories[2])
-	const test: any = input
-	for (let i = 0; i < test.length; i ++ ){
-		await crawlStoryWithRawData(test[i])
+	const input: any = await StorySchemaFull.find({category: categories[1].category, status: "Đang ra"})
+	console.log('input...', input.length)
+	// const test: any = input
+	// const test = input.map(inp => {return inp.contentId.content})
+	// console.log(test)
+	for (let i = 0; i < input.length; i ++ ){
+		await fetchContentStory(input[i])
 	}
+	console.log('done all...!')
 }

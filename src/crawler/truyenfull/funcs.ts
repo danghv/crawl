@@ -356,7 +356,7 @@ async function getMaxPageOfCategory() {
 	}
 }
 
-const filterLostNumbers = (arr) => {
+export const filterLostNumbers = (arr) => {
 	let temp = 0
 	return arr.reduce((memo, number) => {
 		const distance = number - temp
